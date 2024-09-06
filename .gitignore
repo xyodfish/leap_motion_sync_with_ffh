@@ -1,5 +1,4 @@
 build/
-bin/
 # Visual Studio Code
 .vs/*
 .vscode
