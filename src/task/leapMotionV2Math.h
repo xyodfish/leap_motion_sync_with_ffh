@@ -42,14 +42,14 @@ namespace ar::Hardware::LeapMotion {
          * @param v1 
          * @return float 
          */
-        inline float angleTo(Vector3 lv3) {
+        inline float angleTo(Vector3 v3) {
 
-            float denom = this->magnitudeSquared() * lv3.magnitudeSquared();
+            float denom = this->magnitudeSquared() * v3.magnitudeSquared();
 
             if (denom <= LEAP_EPSILON) {
                 return 0.0f;
             }
-            float val = this->dot(lv3) / std::sqrt(denom);
+            float val = this->dot(v3) / std::sqrt(denom);
 
             if (val >= 1.0f) {
                 return 0.0f;
@@ -69,6 +69,18 @@ namespace ar::Hardware::LeapMotion {
          * @return Vector3 
          */
         Vector3 operator*(float scalar) const { return Vector3(v_.x * scalar, v_.y * scalar, v_.z * scalar); }
+
+        Vector3 operator-(Vector3 other) const { return Vector3(v_.x - other.x(), v_.y - other.y(), v_.z - other.z()); }
+
+        /**
+         * @brief 计算当前向量与另一个向量的叉积。
+         * 
+         * @param v3 
+         * @return Vector3 
+         */
+        Vector3 getCross(Vector3 v3) {
+            return Vector3(v_.y * v3.z() - v_.z * v3.y(), v_.z * v3.x() - v_.x * v3.z(), v_.x * v3.y() - v_.y * v3.x());
+        }
 
         float x() const { return v_.x; }
         float y() const { return v_.y; }

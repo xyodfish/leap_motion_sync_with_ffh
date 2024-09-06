@@ -33,6 +33,8 @@ namespace ar::Hardware::LeapMotion {
 
         AR_RETURN_VALUE tryConnect();
 
+        auto& getFfh() { return ffhs_; };
+
        private:
         LeapMotionV2Wrapper lmWrap;
         std::vector<std::shared_ptr<FfhCtrl>> ffhs_;
@@ -47,7 +49,7 @@ namespace ar::Hardware::LeapMotion {
         void monitorDaemon();
 
         AR_RETURN_VALUE runIteration();
-        AR_RETURN_VALUE pubFfhCmd(size_t id);
+        AR_RETURN_VALUE publishFfhCmd(size_t id);
 
         std::vector<LEAP_HAND>& getHands();
         bool calPubFingerAngle(const LEAP_HAND& hand);
@@ -79,6 +81,14 @@ namespace ar::Hardware::LeapMotion {
 
         double tryConnectTime_{0.0};
         double controlInternal_{0.0};
+
+        std::string taskName_;
+        std::vector<std::vector<float>> selfCheckData1, selfCheckData2;
+
+        void singleJointTest();
+        void selfCheck();
+        void sendFingerCommands(int id, const std::vector<std::vector<float>>& angles,
+                                const std::shared_ptr<FfhCtrl>& ffh, udp_hand_cmd& cmd);
     };
 
 }  // namespace ar::Hardware::LeapMotion

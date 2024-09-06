@@ -11,4 +11,9 @@ link_directories(
 )
 
 add_library(FfhCtrl SHARED ffhCtrl.cpp udp_hand_types.cpp)
-target_link_libraries(FfhCtrl UdpClient)
+target_link_libraries(FfhCtrl UdpClient spdlog )
+
+add_executable(test_FFH test_FFH.cpp)
+target_link_libraries(test_FFH
+FfhCtrl yaml-cpp)
+

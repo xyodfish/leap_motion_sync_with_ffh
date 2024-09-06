@@ -53,6 +53,14 @@ class FfhCtrl {
 
     int getId() const;
 
+    // this is the test flow for the single finger angles
+    AR_RETURN_VALUE testFlow();
+
+    void reset();
+
+    void setCmdLimit(const std::vector<std::vector<float>>& lowerLimit,
+                     const std::vector<std::vector<float>>& upperLimit);
+
    private:
     std::shared_ptr<UdpClient> udp_;
     udp_hand_cmd handCmd_;
@@ -63,6 +71,12 @@ class FfhCtrl {
     bool inConnection_{false};
 
     void dataProcess();
+
+    void setDefaultCmdLimit();
+
+    std::vector<std::vector<float>> lowerLimits_, upperLimits_;
+
+    static constexpr size_t fingerNum_{5}, angleNum_{3};
 };
 
 #endif

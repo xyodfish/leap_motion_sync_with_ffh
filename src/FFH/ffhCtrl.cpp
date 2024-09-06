@@ -1,4 +1,5 @@
 #include "ffhCtrl.h"
+#include "spdlog/spdlog.h"
 
 FfhCtrl::FfhCtrl(const int& _index, const std::string& _ip, const int& _port)
     : udp_(std::make_shared<UdpClient>(_ip, _port)), index_(_index) {}
@@ -7,6 +8,7 @@ FfhCtrl::FfhCtrl(const FfhUdpData& _data) : udp_(std::make_shared<UdpClient>(_da
 
 FfhCtrl::~FfhCtrl() {
     if (inConnection_) {
+        reset();
         _disconnect();
     }
 }
@@ -19,11 +21,22 @@ AR_RETURN_VALUE FfhCtrl::_disconnect() {
     }
 
     inConnection_ = false;
+
     return AR_RETURN_VALUE::SUCCESS;
 }
 
 int FfhCtrl::getId() const {
     return index_;
+}
+
+void FfhCtrl::setDefaultCmdLimit() {
+    lowerLimits_.resize(fingerNum_);
+    upperLimits_.resize(fingerNum_);
+
+    for (auto i = 0; i < fingerNum_; ++i) {
+        lowerLimits_[i] = {0.0f, 0.0f, -10.f};
+        upperLimits_[i] = {90.0f, 90.0f, 10.0f};
+    }
 }
 
 AR_RETURN_VALUE FfhCtrl::_connect() {
@@ -33,6 +46,57 @@ AR_RETURN_VALUE FfhCtrl::_connect() {
     }
 
     inConnection_ = true;
+    setDefaultCmdLimit();
+    reset();
+    return AR_RETURN_VALUE::SUCCESS;
+}
+
+void FfhCtrl::reset() {
+    memset(&handCmd_, 0, sizeof(udp_hand_cmd));
+    send_hand_cmd();
+}
+
+AR_RETURN_VALUE FfhCtrl::testFlow() {
+    if (!inConnection_) {
+        spdlog::error("The hand has not been connected");
+        return AR_RETURN_VALUE::ACTION_FAIL;
+    }
+
+    std::vector<std::string> strs(3);
+    bool resetFlag = false;
+    while (true) {
+
+        std::cout << "请按顺序输入想要控制的手指id、关节id和角度, 如果想退出 请输入 <\033[32m"
+                     "quit"
+                  << "\033[0m>" << ", 如果想复位，请输入<\033[32m" << "reset" << "\033[0m>" << std::endl;
+
+        for (auto& str : strs) {
+            std::cin >> str;
+            if (str == "quit") {
+                std::cout << "当前测试已经退出!!!" << std::endl;
+                return AR_RETURN_VALUE::SUCCESS;
+            }
+
+            if (str == "reset") {
+                reset();
+                resetFlag = true;
+                std::cout << "当前测试已经复位" << std::endl;
+                break;
+            }
+        }
+
+        if (resetFlag) {
+            resetFlag = false;
+            continue;
+        }
+
+        std::cout << "测试手指id[" << "\033[32m" << strs[0] << "\033[0m], " << "关节id[\033[32m" << strs[1]
+                  << "\033[0m]"
+                  << ", 角度[\033[32m" << strs[2] << "\033[0m]" << std::endl;
+
+        handCmd_.finger[std::stoi(strs[0])].angle[std::stoi(strs[1])] = std::stof(strs[2]);
+        send_hand_cmd();
+    }
 
     return AR_RETURN_VALUE::SUCCESS;
 }
@@ -71,4 +135,10 @@ udp_hand_data FfhCtrl::get_hand_data() {
         return {};
     }
     return handData_;
+}
+
+void FfhCtrl::setCmdLimit(const std::vector<std::vector<float>>& lowerLimit,
+                          const std::vector<std::vector<float>>& upperLimit) {
+    lowerLimits_ = lowerLimit;
+    upperLimits_ = upperLimit;
 }

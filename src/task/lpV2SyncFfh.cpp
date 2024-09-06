@@ -5,7 +5,6 @@
 #include "spdlog/spdlog.h"
 #include "yaml-cpp/yaml.h"
 namespace ar::Hardware::LeapMotion {
-
     LpV2SyncFFH::LpV2SyncFFH(const std::string& config)
         : ffhs_(handTotalNum), ffhValid(std::vector<int>(handTotalNum, 0)), config_(config) {
         parseConfig(config_);
@@ -35,11 +34,15 @@ namespace ar::Hardware::LeapMotion {
     }
 
     AR_RETURN_VALUE LpV2SyncFFH::parseConfig(const std::string& config) {
+
         auto node = YAML::LoadFile(config);
 
-        tryConnectTime_ = node["connection_internal"].as<double>();
-        ffhValid        = node["hand_Valid"].as<std::vector<int>>();
-        auto ffhInfo    = node["hand_info"];
+        ffhValid       = node["hand_Valid"].as<std::vector<int>>();
+        auto ffhInfo   = node["hand_info"];
+        auto handNode  = ffhInfo[EnumUtils::intToString<size_t, FFHEnumClass>(0)];
+        taskName_      = node["task_name"].as<std::string>();
+        selfCheckData1 = node["self_check_angles1"].as<std::vector<std::vector<float>>>();
+        selfCheckData2 = node["self_check_angles2"].as<std::vector<std::vector<float>>>();
 
         for (auto i = 0; i < handTotalNum; ++i) {
             if (!ffhValid[i])
@@ -51,7 +54,10 @@ namespace ar::Hardware::LeapMotion {
 
             lowerLimits_ = handNode["lower_limits"].as<std::vector<std::vector<float>>>();
             upperLimits_ = handNode["upper_limits"].as<std::vector<std::vector<float>>>();
+
+            ffhs_[i]->setCmdLimit(lowerLimits_, upperLimits_);
         }
+
         return AR_RETURN_VALUE::SUCCESS;
     }
 
@@ -95,9 +101,12 @@ namespace ar::Hardware::LeapMotion {
     }
 
     AR_RETURN_VALUE LpV2SyncFFH::connect() {
-        if (lmWrap.connect() != AR_RETURN_VALUE::SUCCESS) {
-            spdlog::error("Cannot connect to Leap Motion.");
-            return AR_RETURN_VALUE::ACTION_FAIL;
+
+        if (taskName_ == "leap_motion_demo") {
+            if (lmWrap.connect() != AR_RETURN_VALUE::SUCCESS) {
+                spdlog::error("Cannot connect to Leap Motion.");
+                return AR_RETURN_VALUE::ACTION_FAIL;
+            }
         }
 
         auto retval = connectFFH();
@@ -127,23 +136,113 @@ namespace ar::Hardware::LeapMotion {
         return AR_RETURN_VALUE::ACTION_FAIL;
     }
 
-    void LpV2SyncFFH::start() {
-        Runnable::start();
-        initialize();
+    void LpV2SyncFFH::singleJointTest() {
+        std::string operCmd;
 
-        mThreads.push_back(std::thread(&LpV2SyncFFH::monitorDaemon, this));
-        mThreads.push_back(std::thread(&LpV2SyncFFH::executeLoop, this));
+        while (true) {
+            std::cout << "退出测试请输入 <\033[32m"
+                      << "quit" << "\033[0m>"
+                      << ", 进入测试请输入 <\033[32m" << "test" << "\033[0m>," << " 手指复位请输入 <\033[32m" << "reset"
+                      << "\033[0m>" << std::endl;
 
-        while (isRunning()) {
-            std::this_thread::sleep_for(10ms);
-        }
+            std::cin >> operCmd;
 
-        for (auto& th : mThreads) {
-            if (th.joinable()) {
-                th.join();
+            if (operCmd == "test") {
+                ffhs_.front()->testFlow();
+            } else if (operCmd == "quit") {
+                ffhs_.front()->reset();
+                break;
+            } else {
+                std::cout << "操作字输入无效，请重新输入！！！！" << std::endl;
             }
         }
-        mThreads.clear();
+    }
+
+    void LpV2SyncFFH::sendFingerCommands(int id, const std::vector<std::vector<float>>& angles,
+                                         const std::shared_ptr<FfhCtrl>& ffh, udp_hand_cmd& cmd) {
+
+        for (auto j = 0; j < 3; ++j) {
+            cmd.finger[id].angle[j] = angles[id][j];
+            ffh->send_hand_cmd(cmd);
+            std::this_thread::sleep_for(0.75s);
+
+            if (j != 2) {
+                cmd.finger[id].angle[j] = 0;
+            }
+
+            ffh->send_hand_cmd(cmd);
+            std::this_thread::sleep_for(0.75s);
+        }
+    }
+
+    void LpV2SyncFFH::selfCheck() {
+        std::string str;
+        udp_hand_cmd tmp_cmd;
+
+        auto ffh = ffhs_.front();
+
+        while (true) {
+
+            std::cout << "灵巧手即将进入自检模式，输入<\033[32m"
+                      << "test" << "\033[0m>"
+                      << ", 进入自检, 输入<\033[32m" << "quit" << "\033[0m>," << " 退出自检" << std::endl;
+
+            std::cin >> str;
+
+            if (str == "test") {
+                ffh->reset();
+                std::this_thread::sleep_for(0.5s);
+
+                memset(&handCmd, 0, sizeof(udp_hand_cmd));
+                for (auto i = 0; i < 5; ++i) {
+                    sendFingerCommands(i, selfCheckData1, ffh, tmp_cmd);
+                }
+                std::this_thread::sleep_for(0.5s);
+
+                ffh->reset();
+                std::this_thread::sleep_for(1s);
+
+                memset(&handCmd, 0, sizeof(udp_hand_cmd));
+                for (auto i = 0; i < 5; ++i) {
+                    sendFingerCommands(4 - i, selfCheckData2, ffh, tmp_cmd);
+                }
+                std::this_thread::sleep_for(0.5s);
+
+                ffh->reset();
+                std::this_thread::sleep_for(1s);
+
+            } else if (str != "quit") {
+                std::cout << "输入了无效指令，请检查后重新输入！！！" << std::endl;
+            } else {
+                return;
+            }
+        }
+    }
+
+    void LpV2SyncFFH::start() {
+
+        if (taskName_ == "test_by_hand") {
+            singleJointTest();
+        } else if (taskName_ == "self_check") {
+            selfCheck();
+        } else if (taskName_ == "leap_motion_demo") {
+            Runnable::start();
+            initialize();
+
+            mThreads.push_back(std::thread(&LpV2SyncFFH::monitorDaemon, this));
+            mThreads.push_back(std::thread(&LpV2SyncFFH::executeLoop, this));
+
+            while (isRunning()) {
+                std::this_thread::sleep_for(10ms);
+            }
+
+            for (auto& th : mThreads) {
+                if (th.joinable())
+                    th.join();
+            }
+
+            mThreads.clear();
+        }
     }
 
     void LpV2SyncFFH::stop() {
@@ -176,12 +275,9 @@ namespace ar::Hardware::LeapMotion {
                 handCmd.finger[0].angle[1] = 5;
             }
         }
-
-        /// 食指指侧向角度取反
-        handCmd.finger[1].angle[2] = -handCmd.finger[1].angle[2];
     }
 
-    AR_RETURN_VALUE LpV2SyncFFH::pubFfhCmd(size_t id) {
+    AR_RETURN_VALUE LpV2SyncFFH::publishFfhCmd(size_t id) {
         if (ffhValid[id]) {
             postProcessHandCmd();
             std::cout << handCmd << std::endl;
@@ -201,7 +297,7 @@ namespace ar::Hardware::LeapMotion {
 
     void LpV2SyncFFH::sendInitHandData() {
         std::memset(&handCmd, 0, sizeof(udp_hand_cmd));
-        pubFfhCmd(static_cast<size_t>(FFHEnumClass::left_hand));
+        publishFfhCmd(static_cast<size_t>(FFHEnumClass::left_hand));
     }
 
     AR_RETURN_VALUE LpV2SyncFFH::runIteration() {
@@ -226,7 +322,7 @@ namespace ar::Hardware::LeapMotion {
             // 只检测左手并转发
             if (hand.type == eLeapHandType_Left) {
                 if (calPubFingerAngle(hand)) {
-                    pubFfhCmd(static_cast<size_t>(FFHEnumClass::left_hand));
+                    publishFfhCmd(static_cast<size_t>(FFHEnumClass::left_hand));
                 } else {
                     sendInitHandData();
                 }
@@ -268,6 +364,13 @@ namespace ar::Hardware::LeapMotion {
 
         auto palm_normal    = Vector3(hand.palm.normal);
         auto hand_direction = hand.palm.direction;
+        auto handDir        = Vector3(hand_direction);
+        handDir.normalize();
+
+        auto tipDir = Vector3{0, 0, 0} - handDir.getCross(Vector3(palm_normal));
+        tipDir.normalize();
+
+        // spdlog::info("The hand dir x is {}, y is {}, z is {}", tipDir.x(), tipDir.y(), tipDir.z());
 
         // the finger cmd which is needed to be send by udp
         auto& fingerCmd = handCmd.finger;
@@ -295,7 +398,10 @@ namespace ar::Hardware::LeapMotion {
             }
 
             fingerCmd[i].angle[static_cast<int>(FJIndex::Proxiaml)] =
-                r2d * LeapTool::getBonesAngle(data.bones[handBone], data.bones[proxBone]);
+                // r2d * LeapTool::getBonesAngle(data.bones[handBone], data.bones[proxBone]);
+                // r2d * tipDir.angleTo(Bone{data.bones[proxBone]}.direction());
+                // r2d * Vector3{1, 1, 0}.angleTo(Bone{data.bones[proxBone].direction()});
+                r2d * Vector3{0, 1, 1}.angleTo(Bone{data.bones[proxBone]}.direction());
 
             // if the fingers are turned away from palm, set angle to zero
             if (palm_normal.dot(Bone{data.bones[proxBone]}.direction() * r2d) < 0) {
@@ -329,9 +435,6 @@ namespace ar::Hardware::LeapMotion {
         if (palm_normal.dot(Bone{data.bones[distalBone]}.direction() * r2d) < 0) {
             fingerCmd[0].angle[static_cast<int>(FJIndex::Proxiaml)] = 0;
         }
-
-        // thumb abduction (thumb oppose): finger_angles_[0][3]
-        // fingerCmd[0].angle[static_cast<int>(FJIndex::Proxiaml)] = 0;
 
         return true;
     }

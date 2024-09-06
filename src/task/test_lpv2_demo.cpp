@@ -5,8 +5,7 @@
 using namespace ar::Hardware::LeapMotion;
 
 int main() {
-    std::string config = getParentPath(3, std::string(__FILE__)) + "/config/leap_motion_demo_config.yaml";
-    LpV2SyncFFH lpTask(config);
+    LpV2SyncFFH lpTask("./leap_motion_demo_config.yaml");
 
     if (lpTask.tryConnect() == AR_RETURN_VALUE::SUCCESS) {
         lpTask.start();
