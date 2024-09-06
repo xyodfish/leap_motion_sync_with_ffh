@@ -1,12 +1,23 @@
+connection_internal: 1
+control_internal: 0.02
 hand_Valid: [ 1, 0 ]
 
 hand_info:
   left_hand:
     ip: 127.0.0.1
     port: 10086
-    lower_limit: [0, 0, -5]
-    upper_limit: [90, 90, 5]
-
+    lower_limits: 
+    - [0, 0, -10]
+    - [0, 0, -10]
+    - [0, 0, -10]
+    - [0, 0, -10]
+    - [0, 0, -10]
+    upper_limits: 
+    - [90, 90, 10]
+    - [90, 90, 10]
+    - [90, 90, 10]
+    - [90, 90, 10]
+    - [90, 90, 10]
   right_hand:
     ip: 192.168.10.11
     port: 3335  

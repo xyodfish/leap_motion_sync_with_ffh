@@ -17,7 +17,8 @@ namespace ar::Hardware::LeapMotion {
 
     class LpV2SyncFFH : public ar::Hardware::DeviceBase {
        public:
-        LpV2SyncFFH();
+        LpV2SyncFFH() = delete;
+        LpV2SyncFFH(const std::string& config);
         ~LpV2SyncFFH();
 
         virtual AR_RETURN_VALUE connect() override;
@@ -29,6 +30,8 @@ namespace ar::Hardware::LeapMotion {
 
         void initialize();
         bool inConnection() const;
+
+        AR_RETURN_VALUE tryConnect();
 
        private:
         LeapMotionV2Wrapper lmWrap;
@@ -70,7 +73,12 @@ namespace ar::Hardware::LeapMotion {
         // 这是位于手指尖端的骨头，位于手指的最远端。
         static constexpr int distalBone = static_cast<int>(BoneType::BT_DISTAL);
 
-        std::vector<float> lowerLimit_, upperLimit_;
+        std::vector<std::vector<float>> lowerLimits_, upperLimits_;
+
+        std::string config_;
+
+        double tryConnectTime_{0.0};
+        double controlInternal_{0.0};
     };
 
 }  // namespace ar::Hardware::LeapMotion

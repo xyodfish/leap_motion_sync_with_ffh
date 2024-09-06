@@ -4,20 +4,13 @@
 
 using namespace ar::Hardware::LeapMotion;
 
-int main()
-{
-    LpV2SyncFFH lpTask;
-    std::string curFile = __FILE__;
-    std::string confg   = getParentPath(3, curFile) + "/config/leap_motion_demo_config.yaml";
+int main() {
+    std::string config = getParentPath(3, std::string(__FILE__)) + "/config/leap_motion_demo_config.yaml";
+    LpV2SyncFFH lpTask(config);
 
-    lpTask.parseConfig(confg);
-    if (lpTask.connect() != AR_RETURN_VALUE::SUCCESS)
-    {
-        spdlog::error("Lp v2 task connection failed");
-        return 1;
+    if (lpTask.tryConnect() == AR_RETURN_VALUE::SUCCESS) {
+        lpTask.start();
     }
-
-    lpTask.start();
 
     return 0;
 }
