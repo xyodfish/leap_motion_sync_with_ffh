@@ -280,7 +280,7 @@ namespace ar::Hardware::LeapMotion {
     AR_RETURN_VALUE LpV2SyncFFH::publishFfhCmd(size_t id) {
         if (ffhValid[id]) {
             postProcessHandCmd();
-            std::cout << handCmd << std::endl;
+            // std::cout << handCmd << std::endl;
             ffhs_[id]->send_hand_cmd(handCmd);
         }
 
@@ -362,12 +362,11 @@ namespace ar::Hardware::LeapMotion {
             return false;
         }
 
-        auto palm_normal    = Vector3(hand.palm.normal);
-        auto hand_direction = hand.palm.direction;
-        auto handDir        = Vector3(hand_direction);
-        handDir.normalize();
+        auto palm_normal = Vector3(hand.palm.normal).normalized();
+        auto handDir     = Vector3(hand.palm.direction).normalized();
 
-        auto tipDir = Vector3{0, 0, 0} - handDir.getCross(Vector3(palm_normal));
+        // auto tipDir = Vector3{0, 0, 0} - palm_normal.getCross(Vector3(handDir));
+        auto tipDir = Vector3{0, 0, 0} - palm_normal.getCross(Vector3(handDir));
         tipDir.normalize();
 
         // spdlog::info("The hand dir x is {}, y is {}, z is {}", tipDir.x(), tipDir.y(), tipDir.z());
@@ -397,11 +396,14 @@ namespace ar::Hardware::LeapMotion {
                 handCmd.finger[i].angle[static_cast<int>(FJIndex::Middle)] = 0;
             }
 
+            auto angle = tipDir.angleTo(Bone{data.bones[proxBone]}.direction());
+
             fingerCmd[i].angle[static_cast<int>(FJIndex::Proxiaml)] =
                 // r2d * LeapTool::getBonesAngle(data.bones[handBone], data.bones[proxBone]);
                 // r2d * tipDir.angleTo(Bone{data.bones[proxBone]}.direction());
                 // r2d * Vector3{1, 1, 0}.angleTo(Bone{data.bones[proxBone].direction()});
-                r2d * Vector3{0, 1, 1}.angleTo(Bone{data.bones[proxBone]}.direction());
+                // r2d * Vector3{0, 1, 1}.angleTo(Bone{data.bones[proxBone]}.direction());
+                r2d * angle;
 
             // if the fingers are turned away from palm, set angle to zero
             if (palm_normal.dot(Bone{data.bones[proxBone]}.direction() * r2d) < 0) {

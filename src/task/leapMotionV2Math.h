@@ -13,28 +13,43 @@ namespace ar::Hardware::LeapMotion {
     class Vector3 {
        public:
         Vector3() {};
-        Vector3(const float& x, const float& y, const float& z) : v_({x, y, z}) {}
-        Vector3(const LEAP_VECTOR& vector) : v_(vector) {}
-        Vector3(const LEAP_VECTOR& v1, const LEAP_VECTOR& v2) : v_{v1.x - v2.x, v1.y - v2.y, v1.z - v2.z} {}
+        Vector3(const float& x, const float& y, const float& z) : x_(x), y_(y), z_(z) {}
+        Vector3(const LEAP_VECTOR& vector) : x_(vector.x), y_(vector.y), z_(vector.z) {}
+        Vector3(const LEAP_VECTOR& v1, const LEAP_VECTOR& v2) : x_(v1.x - v2.x), y_(v1.y - v2.y), z_(v1.z - v2.z) {}
 
         void normalize() {
-            if (magnitude() == 0) {
-                v_.x = v_.y = v_.z = 0.0f;
+            float denom = this->magnitudeSquared();
+            if (denom <= LEAP_EPSILON) {
+                x_ = y_ = z_ = 0.0f;
                 return;
             }
 
-            v_.x /= magnitude();
-            v_.y /= magnitude();
-            v_.z /= magnitude();
+            denom = 1.0 / std::sqrt(denom);
+            x_    = x_ * denom;
+            y_    = y_ * denom;
+            z_    = z_ * denom;
         }
 
-        inline LEAP_VECTOR& raw() { return v_; }
+        Vector3 normalized() {
+            float denom = this->magnitudeSquared();
+            if (denom <= LEAP_EPSILON) {
+                return zero();
+            }
+            denom = 1.0 / std::sqrt(denom);
+            return Vector3(static_cast<float>(x_ * denom), static_cast<float>(y_ * denom),
+                           static_cast<float>(z_ * denom));
+        }
 
-        float magnitudeSquared() { return (v_.x * v_.x) + (v_.y * v_.y) + (v_.z * v_.z); }
+        static const Vector3& zero() {
+            static Vector3 s_zero(0, 0, 0);
+            return s_zero;
+        }
+
+        float magnitudeSquared() { return (x_ * x_) + (y_ * y_) + (z_ * z_); }
 
         /// @brief  模长
         /// @return
-        float magnitude() { return std::sqrt((v_.x * v_.x) + (v_.y * v_.y) + (v_.z * v_.z)); }
+        float magnitude() { return std::sqrt((x_ * x_) + (y_ * y_) + (z_ * z_)); }
 
         /**
          * @brief cal angle between to vectors
@@ -42,14 +57,14 @@ namespace ar::Hardware::LeapMotion {
          * @param v1 
          * @return float 
          */
-        inline float angleTo(Vector3 v3) {
+        inline float angleTo(Vector3 other) {
 
-            float denom = this->magnitudeSquared() * v3.magnitudeSquared();
+            float denom = this->magnitudeSquared() * other.magnitudeSquared();
 
             if (denom <= LEAP_EPSILON) {
                 return 0.0f;
             }
-            float val = this->dot(v3) / std::sqrt(denom);
+            float val = this->dot(other) / std::sqrt(denom);
 
             if (val >= 1.0f) {
                 return 0.0f;
@@ -60,7 +75,7 @@ namespace ar::Hardware::LeapMotion {
             return std::acos(val);
         }
 
-        float dot(Vector3 v) { return (v_.x * v.x()) + (v_.y * v.y()) + (v_.z * v.z()); }
+        float dot(Vector3 v) { return (x_ * v.x()) + (y_ * v.y()) + (z_ * v.z()); }
 
         /**
          * @brief Multiply vector by a scalar.
@@ -68,9 +83,9 @@ namespace ar::Hardware::LeapMotion {
          * @param scalar 
          * @return Vector3 
          */
-        Vector3 operator*(float scalar) const { return Vector3(v_.x * scalar, v_.y * scalar, v_.z * scalar); }
+        Vector3 operator*(float scalar) const { return Vector3(x_ * scalar, y_ * scalar, z_ * scalar); }
 
-        Vector3 operator-(Vector3 other) const { return Vector3(v_.x - other.x(), v_.y - other.y(), v_.z - other.z()); }
+        Vector3 operator-(Vector3 other) const { return Vector3(x_ - other.x(), y_ - other.y(), z_ - other.z()); }
 
         /**
          * @brief 计算当前向量与另一个向量的叉积。
@@ -78,16 +93,17 @@ namespace ar::Hardware::LeapMotion {
          * @param v3 
          * @return Vector3 
          */
-        Vector3 getCross(Vector3 v3) {
-            return Vector3(v_.y * v3.z() - v_.z * v3.y(), v_.z * v3.x() - v_.x * v3.z(), v_.x * v3.y() - v_.y * v3.x());
+        Vector3 getCross(Vector3 other) {
+            return Vector3(y_ * other.z() - z_ * other.y(), z_ * other.x() - x_ * other.z(),
+                           x_ * other.y() - y_ * other.x());
         }
 
-        float x() const { return v_.x; }
-        float y() const { return v_.y; }
-        float z() const { return v_.z; }
+        float x() const { return x_; }
+        float y() const { return y_; }
+        float z() const { return z_; }
 
        private:
-        LEAP_VECTOR v_;
+        float x_{0.0f}, y_{0.0f}, z_{0.0f};
     };
 
     class Bone {
