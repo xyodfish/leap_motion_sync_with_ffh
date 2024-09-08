@@ -1,5 +1,5 @@
 connection_internal: 1
-control_internal: 0.5
+control_internal: 0.05
 hand_Valid: [ 1, 0 ]
 task_name: "leap_motion_demo" #  self_check、test_by_hand 、 leap_motion_demo
 
