@@ -61,4 +61,7 @@ add_subdirectory(${SRC_DIR}/udp)
 add_subdirectory(${SRC_DIR}/FFH)
 add_subdirectory(${SRC_DIR}/task)
 add_subdirectory(${SRC_DIR}/OfficialWrapper)
+add_subdirectory(${SRC_DIR}/OfficialWrapper/testing)
+add_subdirectory(${SRC_DIR}/OfficialWrapper/example)
+add_subdirectory(contrib)
 

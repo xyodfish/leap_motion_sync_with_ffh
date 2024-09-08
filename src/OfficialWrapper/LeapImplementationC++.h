@@ -691,7 +691,7 @@ public:
     uint32_t id = 0;
     LEAP_VARIANT leapVar;
     leapVar.type = static_cast<eLeapValueType>(value.type);
-    switch(leapVar.type) {
+    switch(static_cast<Config::ValueType>(leapVar.type)) {
     case Config::TYPE_BOOLEAN:
       leapVar.boolValue = value.bValue;
       break;
