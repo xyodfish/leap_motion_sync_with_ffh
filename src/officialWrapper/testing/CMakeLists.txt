@@ -5,7 +5,7 @@ set(LEAP_CPP_TEST_SRCS
 )
 
 include_directories(
-        ${SRC_DIR}/OfficialWrapper
+        ${SRC_DIR}/officialWrapper
         ${INC_DIR}/third_party/leapMotion/v1
 )
 

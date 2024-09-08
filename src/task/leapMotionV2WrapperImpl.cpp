@@ -160,7 +160,7 @@ namespace ar::Hardware::LeapMotion {
                     break;
                 default:
                     //discard unknown message types
-                    spdlog::warn("Unhandled message type {}", msg.type);
+                    spdlog::info("Unhandled message type {}", msg.type);
                     break;
             }  //switch on msg.type
         }

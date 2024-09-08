@@ -1,6 +1,4 @@
-#include "helper_functions.h"
 #include "lpV2SyncFfh.h"
-#include "spdlog/spdlog.h"
 
 using namespace ar::Hardware::LeapMotion;
 
