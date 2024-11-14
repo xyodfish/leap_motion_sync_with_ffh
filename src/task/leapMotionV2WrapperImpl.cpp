@@ -317,7 +317,6 @@ namespace ar::Hardware::LeapMotion {
         regCallback("onLogMsg", _onLogMsg);
         regCallback("onCfgChange", _onCfgChange);
         regCallback("onCfgRes", _onCfgRes);
-        regCallback("onCfgRes", _onCfgRes);
         regCallback("onImage", _onImage);
         regCallback("onHeadPose", _onHeadPose);
         regCallback("onImu", _onImu);

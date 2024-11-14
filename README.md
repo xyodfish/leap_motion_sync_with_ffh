@@ -86,7 +86,45 @@ sudo ./impedance_controller enp0s31f6
 
 ## 4 任务执行
 ### 4.1 角度同步
+确保已连接传感器上电，并启动上位机。
+进入bin文件夹后，打开终端，执行
+完成设置后，进入bin文件夹中打开终端，并执行
+```console
+sudo ./impedance_controller enp0s31f6
+```
+完成控制器程序启动后，
+在leap_motion_demo_config.yaml中将参数**task_name**设置为**leap_motion_demo**。
+在当前目录下，打开一个新的终端， 执行可执行文件**test_lpv2_demo**
+```console
+./test_lpv2_demo
+```
+![demo参数config文件](./doc/2024-09-09_10-23.png)
 ### 4.2 手指自检
+将上述test_lpv2_demo程序关闭（ctrl + v, 或者输入q + enter) 
+在leap_motion_demo_config.yaml中将参数**task_name**设置为**self_check**。
+该完后重复4.1中的操作启动**leap_motion_demo**
+![demo参数config文件](./doc/2024-09-09_14-24.png)
+运行程序后显示上述指令
+```console
+灵巧手即将进入自检模式，输入<test>, 进入自检，输入<quit>, 退出自检
+```
+根据指令输入**test**, 之后会看到灵巧手每个手指的关节依次运动的自检程序
+如果想退出自检程序，则在灵巧手完成自检程序后，输入**quit** 或者ctrl + c 则会退出程序。
 ### 4.3 根据输入参数执行角度
-
+类似上述4.2的操作，将在leap_motion_demo_config.yaml中将参数**task_name**设置为**test_by_hand**。
+然后命令行启动**test_lpv2_demo**
+![demo参数config文件](./doc/2024-09-09_14-39.png)
+命令行输入**test**, 可执行单一关节测试。
+![demo参数config文件](./doc/2024-09-09_14-40.png)
+如图所示可以输入手指id、关节id和期望角度
+0：拇指
+1：食指
+2：中指
+3：无名指
+4：小拇指
+![demo参数config文件](./doc/2024-09-09_14-41.png)
+如图所示一次输入0、1、30，即可控制灵巧手大拇指第2关节运动至30度
+同理输入reset可以将手指复位， 输入quit则可退出测试
+![demo参数config文件](./doc/2024-09-09_14-43_1.png)
 ## 5 故障排除
+常见的故障有手指无反应或者运动位置异常，此时可以重新上电，并重新启动impedance_controller程序。

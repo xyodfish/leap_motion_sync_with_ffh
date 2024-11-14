@@ -139,6 +139,8 @@ namespace ar::Hardware::LeapMotion {
     void LpV2SyncFFH::singleJointTest() {
         std::string operCmd;
 
+        auto ffh = ffhs_.front();
+
         while (true) {
             std::cout << "退出测试请输入 <\033[32m"
                       << "quit" << "\033[0m>"
@@ -148,9 +150,9 @@ namespace ar::Hardware::LeapMotion {
             std::cin >> operCmd;
 
             if (operCmd == "test") {
-                ffhs_.front()->testFlow();
+                ffh->testFlow();
             } else if (operCmd == "quit") {
-                ffhs_.front()->reset();
+                ffh->reset();
                 break;
             } else {
                 std::cout << "操作字输入无效，请重新输入！！！！" << std::endl;

@@ -94,6 +94,15 @@ AR_RETURN_VALUE FfhCtrl::testFlow() {
                   << "\033[0m]"
                   << ", 角度[\033[32m" << strs[2] << "\033[0m]" << std::endl;
 
+        // auto fingerId = std::stoi(strs[0]);
+        // auto jointId  = std::stoi(strs[1]);
+        // auto angle    = std::stof(strs[2]);
+
+        // if (fingerId > 4 || jointId > 2 || angle > std::fabs(lowerLimits_[fingerId][2])) {
+        //     std::cout << "输入有误，请重新输入" << std::endl;
+        //     continue;
+        // }
+
         handCmd_.finger[std::stoi(strs[0])].angle[std::stoi(strs[1])] = std::stof(strs[2]);
         send_hand_cmd();
     }
