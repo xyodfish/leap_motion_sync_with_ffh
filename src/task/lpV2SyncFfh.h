@@ -91,11 +91,11 @@ namespace ar::Hardware::LeapMotion {
         void sendFingerCommands(int id, const std::vector<std::vector<float>>& angles,
                                 const std::shared_ptr<FfhCtrl>& ffh, udp_hand_cmd& cmd);
 
-        /// @brief 计算大拇指的侧摆角度
+        /// @brief 计算手指的侧摆
         /// @param palmNormal
         /// @param data
         /// @return
-        float calThumbAdduction(Vector3 palmNormal, LEAP_DIGIT data);
+        float calFingerAdduction(Vector3 palmNormal, LEAP_DIGIT data);
     };
 
 }  // namespace ar::Hardware::LeapMotion

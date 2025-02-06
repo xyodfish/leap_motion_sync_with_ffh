@@ -12,7 +12,7 @@ struct udp_finger_cmd {
     float angle[4];
     // float distal;
     // float base_forw_backw;
-    // float base_left_right;
+    // float base_left_right;  // 侧摆（除了拇指外的指头）
     // float thumb angle;
 };
 
@@ -23,8 +23,8 @@ struct udp_hand_cmd {
 struct udp_finger_data {
     float distal_angle;
     float base_forw_backw_angle;
-    float base_left_right_angle;
-    float torque[3];  // tip, base1, base left right
+    float base_left_right_angle;  // 侧摆（除了拇指外的指头）
+    float torque[3];              // tip, base1, base left right
 };
 
 struct udp_hand_data {
@@ -40,8 +40,9 @@ std::ostream& operator<<(std::ostream& os, const struct udp_hand_data& handcmd);
 
 enum class FJIndex {
     Distal = 0,  // 远短指骨
-    Middle,      // 中间指骨
-    Proxiaml     // 近端指骨
+    FbDir,       // 前后弯曲
+    LrDir,       // 左右弯曲
+    ThumbPalm,   // 大拇指虎口合掌
 };  // FingerJointIndex
 
 enum class FFHEnumClass { left_hand = 0, right_hand = 1 };

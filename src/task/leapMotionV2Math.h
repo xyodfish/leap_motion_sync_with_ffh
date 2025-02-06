@@ -114,6 +114,14 @@ namespace ar::Hardware::LeapMotion {
             return Vector3(x_ - proj.x(), y_ - proj.y(), z_ - proj.z());
         }
 
+        /// @brief 给定平面法向量 计算该向量与平面的夹角
+        /// @param planeNormal
+        /// @return
+        float angleToPlane(Vector3 planeNormal) {
+            float cosTheta = this->dot(planeNormal) / (this->magnitude() * planeNormal.magnitude());
+            return std::acos(cosTheta);
+        }
+
         float x() const { return x_; }
         float y() const { return y_; }
         float z() const { return z_; }

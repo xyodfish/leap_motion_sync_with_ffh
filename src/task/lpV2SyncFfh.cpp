@@ -389,26 +389,29 @@ namespace ar::Hardware::LeapMotion {
                 handCmd.finger[i].angle[static_cast<int>(FJIndex::Distal)] = 0;
             }
 
-            fingerCmd[i].angle[static_cast<int>(FJIndex::Middle)] =
+            fingerCmd[i].angle[static_cast<int>(FJIndex::FbDir)] =
                 r2d * LeapTool::getBonesAngle(data.bones[proxBone], data.bones[middleBone]);
 
             // if the fingers are turned away from palm, set angle to zero
             if (palm_normal.dot(Bone{data.bones[static_cast<int>(middleBone)]}.direction() * r2d) < 0) {
-                handCmd.finger[i].angle[static_cast<int>(FJIndex::Middle)] = 0;
+                handCmd.finger[i].angle[static_cast<int>(FJIndex::FbDir)] = 0;
             }
 
             auto angle = tipDir.angleTo(Bone{data.bones[proxBone]}.direction());
 
-            fingerCmd[i].angle[static_cast<int>(FJIndex::Proxiaml)] =
-                r2d * LeapTool::getBonesAngle(data.bones[handBone], data.bones[proxBone]);
+            // fingerCmd[i].angle[static_cast<int>(FJIndex::LrDir)] =
+            //     r2d * LeapTool::getBonesAngle(data.bones[handBone], data.bones[proxBone]);
             // r2d * tipDir.angleTo(Bone{data.bones[proxBone]}.direction());
             // r2d * Vector3{1, 1, 0}.angleTo(Bone{data.bones[proxBone].direction()});
             // r2d * Vector3{0, 1, 1}.angleTo(Bone{data.bones[proxBone]}.direction());
             // r2d * angle;
 
+            // 计算侧摆
+            fingerCmd[i].angle[static_cast<int>(FJIndex::LrDir)] = calFingerAdduction(palm_normal, data);
+
             // if the fingers are turned away from palm, set angle to zero
             if (palm_normal.dot(Bone{data.bones[proxBone]}.direction()) < 0) {
-                handCmd.finger[i].angle[static_cast<int>(FJIndex::Proxiaml)] = 0;
+                handCmd.finger[i].angle[static_cast<int>(FJIndex::LrDir)] = 0;
             }
         }
 
@@ -430,22 +433,27 @@ namespace ar::Hardware::LeapMotion {
             fingerCmd[0].angle[static_cast<int>(FJIndex::Distal)] = 0;
         }
 
-        fingerCmd[0].angle[static_cast<int>(FJIndex::Middle)] = fingerCmd[0].angle[static_cast<int>(FJIndex::Distal)];
+        fingerCmd[0].angle[static_cast<int>(FJIndex::FbDir)] = fingerCmd[0].angle[static_cast<int>(FJIndex::Distal)];
 
-        fingerCmd[0].angle[static_cast<int>(FJIndex::Proxiaml)] =
-            r2d * LeapTool::getBonesAngle(data.bones[proxBone], data.bones[middleBone]);
+        fingerCmd[0].angle[static_cast<int>(FJIndex::LrDir)] = calFingerAdduction(palm_normal, data);
 
-        if (palm_normal.dot(Bone{data.bones[distalBone]}.direction() * r2d) < 0) {
-            fingerCmd[0].angle[static_cast<int>(FJIndex::Proxiaml)] = 0;
+        if (palm_normal.dot(Bone{data.bones[distalBone]}.direction()) < 0) {
+            fingerCmd[0].angle[static_cast<int>(FJIndex::LrDir)] = 0;
         }
 
-        // fingerCmd[0].angle[3] = 0;  // 大拇指侧摆角度
-        fingerCmd[0].angle[3] = calThumbAdduction(palm_normal, data);
+        ///@brief 计算拇指虎口合掌角度
+        /// 计算palm指节向量到手掌平面的夹角
+        fingerCmd[0].angle[static_cast<int>(FJIndex::ThumbPalm)] =
+            r2d * Bone(data.bones[middleBone]).direction().angleToPlane(palm_normal);
+
+        if (fingerCmd[0].angle[static_cast<int>(FJIndex::ThumbPalm)] < 0) {
+            fingerCmd[0].angle[static_cast<int>(FJIndex::ThumbPalm)] = 0;
+        }
 
         return true;
     }
 
-    float LpV2SyncFFH::calThumbAdduction(Vector3 palmNormal, LEAP_DIGIT data) {
+    float LpV2SyncFFH::calFingerAdduction(Vector3 palmNormal, LEAP_DIGIT data) {
 
         auto hb = data.bones[handBone];  // handBone
         auto pb = data.bones[proxBone];
