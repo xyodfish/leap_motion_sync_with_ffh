@@ -112,8 +112,11 @@ AR_RETURN_VALUE FfhCtrl::testFlow() {
 
 void FfhCtrl::dataProcess() {
 
-    for (auto i = 0; i < 5; ++i) {
-        for (auto j = 0; j < 3; ++j) {
+    const size_t fingerNum = 5;
+    const size_t jointNum  = sizeof(udp_finger_cmd::angle) / sizeof(float);
+
+    for (auto i = 0; i < fingerNum; ++i) {
+        for (auto j = 0; j < jointNum; ++j) {
             if (handCmd_.finger[i].angle[j] < LIMIT_HCMD_LOWER[j]) {
                 handCmd_.finger[i].angle[j] = LIMIT_HCMD_LOWER[j];
             }

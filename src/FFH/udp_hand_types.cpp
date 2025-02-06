@@ -6,6 +6,7 @@ std::ostream& operator<<(std::ostream& os, const struct udp_finger_cmd& fcmd) {
     os << "[" << std::setw(7) << fcmd.angle[0] << ",";
     os << std::setw(7) << fcmd.angle[1] << ",";
     os << std::setw(7) << fcmd.angle[2] << "]\n";
+    os << std::setw(7) << fcmd.angle[3] << "]\n";
     return os;
 }
 
@@ -16,7 +17,9 @@ std::ostream& operator<<(std::ostream& os, const struct udp_hand_cmd& handcmd) {
     }
     os << "\n";
 
-    const char* row_name[] = {"distal", "base_forw_backw", "base_left_right"};
+    const size_t angleNum = sizeof(handcmd.finger[0]) / sizeof(float);
+
+    const char* row_name[] = {"distal", "base_forw_backw", "base_left_right", "thumb_palm_pos"};
     for (int row = 0; row < 3; row++) {
         os << std::setw(15) << row_name[row] << ":";
         for (int i = 0; i < 5; i++) {
@@ -53,5 +56,9 @@ std::ostream& operator<<(std::ostream& os, const struct udp_hand_data& handdata)
         }
         os << "\n";
     }
+
+    os << std::setw(15) << row_name[3];
+    os << std::setw(7) << handdata.thumb_palm_angle;
+    os << "\n";
     return os;
 }

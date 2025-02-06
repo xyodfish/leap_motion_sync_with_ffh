@@ -1,7 +1,6 @@
 #include "lpV2SyncFfh.h"
 #include "arEnumUtils.h"
 #include "helper_functions.h"
-#include "leapMotionV2Math.h"
 #include "spdlog/spdlog.h"
 #include "yaml-cpp/yaml.h"
 namespace ar::Hardware::LeapMotion {
@@ -163,7 +162,7 @@ namespace ar::Hardware::LeapMotion {
     void LpV2SyncFFH::sendFingerCommands(int id, const std::vector<std::vector<float>>& angles,
                                          const std::shared_ptr<FfhCtrl>& ffh, udp_hand_cmd& cmd) {
 
-        for (auto j = 0; j < 3; ++j) {
+        for (auto j = 0; j < 4; ++j) {
             cmd.finger[id].angle[j] = angles[id][j];
             ffh->send_hand_cmd(cmd);
             std::this_thread::sleep_for(0.75s);
@@ -386,7 +385,7 @@ namespace ar::Hardware::LeapMotion {
                 r2d * LeapTool::getBonesAngle(data.bones[middleBone], data.bones[distalBone]);
 
             // if the fingers are turned away from palm, set angle to zero
-            if (palm_normal.dot(Bone{data.bones[distalBone]}.direction() * r2d) < 0) {
+            if (palm_normal.dot(Bone{data.bones[distalBone]}.direction()) < 0) {
                 handCmd.finger[i].angle[static_cast<int>(FJIndex::Distal)] = 0;
             }
 
@@ -401,14 +400,14 @@ namespace ar::Hardware::LeapMotion {
             auto angle = tipDir.angleTo(Bone{data.bones[proxBone]}.direction());
 
             fingerCmd[i].angle[static_cast<int>(FJIndex::Proxiaml)] =
-                // r2d * LeapTool::getBonesAngle(data.bones[handBone], data.bones[proxBone]);
-                // r2d * tipDir.angleTo(Bone{data.bones[proxBone]}.direction());
-                // r2d * Vector3{1, 1, 0}.angleTo(Bone{data.bones[proxBone].direction()});
-                // r2d * Vector3{0, 1, 1}.angleTo(Bone{data.bones[proxBone]}.direction());
-                r2d * angle;
+                r2d * LeapTool::getBonesAngle(data.bones[handBone], data.bones[proxBone]);
+            // r2d * tipDir.angleTo(Bone{data.bones[proxBone]}.direction());
+            // r2d * Vector3{1, 1, 0}.angleTo(Bone{data.bones[proxBone].direction()});
+            // r2d * Vector3{0, 1, 1}.angleTo(Bone{data.bones[proxBone]}.direction());
+            // r2d * angle;
 
             // if the fingers are turned away from palm, set angle to zero
-            if (palm_normal.dot(Bone{data.bones[proxBone]}.direction() * r2d) < 0) {
+            if (palm_normal.dot(Bone{data.bones[proxBone]}.direction()) < 0) {
                 handCmd.finger[i].angle[static_cast<int>(FJIndex::Proxiaml)] = 0;
             }
         }
@@ -427,7 +426,7 @@ namespace ar::Hardware::LeapMotion {
         // if the fingers are turned away from palm, set angle to zero
         // WHY ? (copied from code above)
         // WHY do we need to multiply (int)Leap::RAD_TO_DEG inside dot product ?
-        if (palm_normal.dot(Bone{data.bones[distalBone]}.direction() * r2d) < 0) {
+        if (palm_normal.dot(Bone{data.bones[distalBone]}.direction()) < 0) {
             fingerCmd[0].angle[static_cast<int>(FJIndex::Distal)] = 0;
         }
 
@@ -440,7 +439,28 @@ namespace ar::Hardware::LeapMotion {
             fingerCmd[0].angle[static_cast<int>(FJIndex::Proxiaml)] = 0;
         }
 
+        // fingerCmd[0].angle[3] = 0;  // 大拇指侧摆角度
+        fingerCmd[0].angle[3] = calThumbAdduction(palm_normal, data);
+
         return true;
+    }
+
+    float LpV2SyncFFH::calThumbAdduction(Vector3 palmNormal, LEAP_DIGIT data) {
+
+        auto hb = data.bones[handBone];  // handBone
+        auto pb = data.bones[proxBone];
+
+        Bone handBoneData(hb);
+        Bone proxBoneData(pb);
+
+        Vector3 directionHand = handBoneData.direction();
+        Vector3 directionProx = handBoneData.direction();
+
+        // 投影到平面并计算角度
+        Vector3 projDirectionHand = palmNormal.calProjToPlane(directionHand);
+        Vector3 projDirectionProx = palmNormal.calProjToPlane(directionProx);
+
+        return r2d * LeapTool::getVectorAngle(projDirectionHand, projDirectionProx);
     }
 
 }  // namespace ar::Hardware::LeapMotion

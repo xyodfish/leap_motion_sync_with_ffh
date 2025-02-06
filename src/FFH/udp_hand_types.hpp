@@ -5,14 +5,15 @@
 // This is the shared part of data structure for both python and cpp code
 // Don't include it directly; include 'udp_hand_types.hpp' instead
 // distal, base forward-backword, base left-right
-const float LIMIT_HCMD_LOWER[3] = {0, 0, -10};
-const float LIMIT_HCMD_UPPER[3] = {90, 90, 10};
+const float LIMIT_HCMD_LOWER[4] = {0, 0, -15, -30};
+const float LIMIT_HCMD_UPPER[4] = {90, 90, 15, 30};
 
 struct udp_finger_cmd {
-    float angle[3];
+    float angle[4];
     // float distal;
     // float base_forw_backw;
     // float base_left_right;
+    // float thumb angle;
 };
 
 struct udp_hand_cmd {
@@ -28,6 +29,7 @@ struct udp_finger_data {
 
 struct udp_hand_data {
     struct udp_finger_data finger[5];
+    float thumb_palm_angle;
 };
 
 std::ostream& operator<<(std::ostream& os, const struct udp_finger_cmd& fcmd);

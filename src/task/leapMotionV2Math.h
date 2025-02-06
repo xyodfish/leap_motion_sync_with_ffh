@@ -6,9 +6,9 @@
 
 namespace ar::Hardware::LeapMotion {
 
-    static const float LEAP_EPSILON = 1.192092896e-07f;
-    static const float LEAP_PI      = 3.1415926536f;
-    static const float r2d          = 57.295779513f;
+    static constexpr float LEAP_EPSILON = 1.192092896e-07f;
+    static constexpr float LEAP_PI      = 3.1415926536f;
+    static constexpr float r2d          = 57.295779513f;
 
     class Vector3 {
        public:
@@ -98,6 +98,22 @@ namespace ar::Hardware::LeapMotion {
                            x_ * other.y() - y_ * other.x());
         }
 
+        /// @brief 计算向量other在当前向量上的投影向量。
+        /// @param v
+        /// @return
+        Vector3 calProj(Vector3 v) {
+            double scalar = this->dot(v) / this->dot(*this);
+            return Vector3(x_ * scalar, y_ * scalar, z_ * scalar);
+        }
+
+        /// @brief 计算给定向量在以当前向量为法向量的平面上的投影向量。
+        /// @param v
+        /// @return
+        Vector3 calProjToPlane(Vector3 v) {
+            Vector3 proj = this->calProj(v);
+            return Vector3(x_ - proj.x(), y_ - proj.y(), z_ - proj.z());
+        }
+
         float x() const { return x_; }
         float y() const { return y_; }
         float z() const { return z_; }
@@ -129,6 +145,8 @@ namespace ar::Hardware::LeapMotion {
             Bone lb2(b2);
             return lb1.direction().angleTo(lb2.direction());
         }
+
+        static float getVectorAngle(Vector3 v1, Vector3 v2) { return v1.angleTo(v2); }
     };
 }  // namespace ar::Hardware::LeapMotion
 

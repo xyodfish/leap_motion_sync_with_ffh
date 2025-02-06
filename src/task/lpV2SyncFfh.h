@@ -2,6 +2,7 @@
 #define __LP2_SYNC_FFH_H__
 
 #include "ffhCtrl.h"
+#include "leapMotionV2Math.h"
 #include "leapMotionV2Wrapper.h"
 
 using namespace ar::Types;
@@ -89,6 +90,12 @@ namespace ar::Hardware::LeapMotion {
         void selfCheck();
         void sendFingerCommands(int id, const std::vector<std::vector<float>>& angles,
                                 const std::shared_ptr<FfhCtrl>& ffh, udp_hand_cmd& cmd);
+
+        /// @brief 计算大拇指的侧摆角度
+        /// @param palmNormal
+        /// @param data
+        /// @return
+        float calThumbAdduction(Vector3 palmNormal, LEAP_DIGIT data);
     };
 
 }  // namespace ar::Hardware::LeapMotion
