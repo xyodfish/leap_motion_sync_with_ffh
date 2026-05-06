@@ -7,6 +7,7 @@
 <p align="center">
   <a href="#-项目简介">项目简介</a> •
   <a href="#-快速开始">快速开始</a> •
+  <a href="#-详细配置流程参考-readmepdf">详细配置</a> •
   <a href="#-运行示例">运行示例</a> •
   <a href="#-参数说明">参数说明</a> •
   <a href="#-故障排除">故障排除</a>
@@ -68,6 +69,15 @@ Leap Motion 设备
 ultraleap-hand-tracking-control-panel
 ```
 
+如未安装驱动，可执行：
+
+```bash
+wget -qO - https://repo.ultraleap.com/keys/apt/gpg | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/ultraleap.gpg
+echo 'deb [arch=amd64] https://repo.ultraleap.com/apt stable main' | sudo tee /etc/apt/sources.list.d/ultraleap.list
+sudo apt update
+sudo apt install ultraleap-hand-tracking
+```
+
 ---
 
 ## 🚀 快速开始
@@ -97,6 +107,70 @@ ifconfig
 ```bash
 sudo ./impedance_controller enp0s31f6
 ```
+
+---
+
+## 📖 详细配置流程（参考 README.pdf）
+
+### 1) 驱动安装与验证
+
+- 启动控制面板：
+
+```bash
+ultraleap-hand-tracking-control-panel
+```
+
+![控制面板](./doc/2024-09-08_15-08.png)
+
+- 识别到手掌即说明 Leap Motion 连接正常：
+
+![手部识别](./doc/handDetection.png)
+
+### 2) 硬件连接
+
+- Leap Motion 上电后侧灯应为绿色：
+
+![Leap 设备](./doc/lp_device.png)
+![Leap 侧灯](./doc/lpLed.png)
+
+- 灵巧手接线示意（网线直连 PC 网口）：
+
+![灵巧手连接](./doc/handDevice.png)
+
+### 3) 启动灵巧手控制器
+
+- 查询网卡名：
+
+```bash
+ifconfig
+```
+
+![网卡名查询](./doc/2024-09-08_16-02.png)
+
+- 启动控制器：
+
+```bash
+sudo ./impedance_controller enp0s31f6
+```
+
+![控制器启动](./doc/2024-09-08_16-07.png)
+
+### 4) 任务运行过程截图
+
+- 角度同步运行界面：
+
+![角度同步](./doc/2024-09-09_10-23.png)
+
+- 自检模式界面：
+
+![自检模式](./doc/2024-09-09_14-24.png)
+
+- 手动测试输入界面与示例：
+
+![手动测试1](./doc/2024-09-09_14-39.png)
+![手动测试2](./doc/2024-09-09_14-40.png)
+![手动测试3](./doc/2024-09-09_14-41.png)
+![手动测试4](./doc/2024-09-09_14-43_1.png)
 
 ---
 
