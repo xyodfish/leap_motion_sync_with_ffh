@@ -1,130 +1,165 @@
-# LeapMotion传感器同步灵巧手的操作文档
+<p align="center">
+  <strong>Leap Motion Sync With FFH</strong>
+</p>
 
-## 1 引言
-该文档用于描述LeapMotion传感器数据实时同步至灵巧手的应用描述文档。
-其中LeapMotion为一款高精度的手势识别设备，这款设备允许用户通过自然手势与计算机交互，无需接触任何物理设备。LeapMotion传感器通过一对红外摄像头捕捉手部和手指的动作，能够以非常高的精度跟踪手部在三维空间中的细微移动。
-灵巧手可由通过UDP网络通信实现灵巧手五个手指的指尖、指中以及侧摆关节的运动控制。
+> 基于 Leap Motion v2 的灵巧手（FFH）实时同步与控制示例工程
 
-## 2 配置与设置
-### 2.1 安装LeapMotion驱动
-测试是否安装LeapMotion驱动
-ctrl + alt + T 按键打开命令行，输入如下指令
-```console
+<p align="center">
+  <a href="#-项目简介">项目简介</a> •
+  <a href="#-快速开始">快速开始</a> •
+  <a href="#-运行示例">运行示例</a> •
+  <a href="#-参数说明">参数说明</a> •
+  <a href="#-故障排除">故障排除</a>
+</p>
+
+---
+
+## ✨ 项目简介
+
+这个仓库用于演示把 **Leap Motion** 手部跟踪数据实时映射到 **FFH 灵巧手** 控制命令。
+
+核心能力：
+
+- 通过 Leap Motion 捕捉手部与手指三维姿态
+- 通过 UDP 向灵巧手发送关节控制指令
+- 提供三种任务模式：实时同步、自检、按参数测试
+
+---
+
+## 🧩 系统组成
+
+```text
+Leap Motion 设备
+  -> Leap SDK / Wrapper
+  -> 同步与映射逻辑（task）
+  -> UDP Client
+  -> FFH 控制器（impedance_controller）
+  -> 灵巧手执行
+```
+
+目录重点：
+
+- `src/task/`：Leap 数据处理与任务逻辑
+- `src/udp/`：UDP 通信
+- `src/FFH/`：灵巧手相关数据结构与控制接口
+- `config/leap_motion_demo_config.yaml`：主要运行参数
+- `bin/`：示例可执行程序与动态库
+
+---
+
+## 🧰 环境依赖
+
+- Linux（Ubuntu）
+- CMake
+- C++ 编译器（支持 C++11/14/17，按当前工程配置）
+- Leap Motion v2 驱动（`ultraleap-hand-tracking`）
+
+驱动检测命令：
+
+```bash
 ultraleap-hand-tracking-control-panel
 ```
-出现如下界面后表示已经成功安装LeapMotion在linux下的驱动，可跳转至下个章节
-![leapMotion上位机界面](./doc/2024-09-08_15-08.png)
 
-如果驱动未安装成功，则在命令行中根据以下命令安装驱动
-1) 添加 Ultraleap GPG Key:
-```console
-wget -qO - https://repo.ultraleap.com/keys/apt/gpg | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/ultraleap.gpg
+---
+
+## 🚀 快速开始
+
+### 1) 编译工程
+
+```bash
+cmake -S . -B build
+cmake --build build -j"$(nproc)"
 ```
-2) 添加Ultraleap仓库至APT:
-```console
-echo 'deb [arch=amd64] https://repo.ultraleap.com/apt stable main' | sudo tee /etc/apt/sources.list.d/ultraleap.list
-```
-3) 更新APT
-```console
-sudo apt update
-```   
-4) 安装Ultraleap包
-```console
-sudo apt install ultraleap-hand-tracking
-```   
-### 2.2 连接硬件设备
 
-#### 2.2.1 连接leapMotion
-![leapmotion实物图](./doc/lp_device.png)
-如图为leapMotion传感器的实物图，将其typec接口插入PC的typec接口，等待几秒后，传感器侧面闪亮绿灯,表示传感器已经正常上电。
-![leapmotion实物图](./doc/lpLed.png)
-此时根据打开上位机的指令，打开上位机，
-```console
-ultraleap-hand-tracking-control-panel
-```
-将手掌放置与传感器上方，可见如下图所示识别识别结果, 表示leapMotion已经正常完成连接
-![leapmotion实物图](./doc/handDetection.png)
+### 2) 连接硬件
 
-#### 2.2.2 连接灵巧手
-灵巧手硬件连接描述如下图所示：
-![leapmotion实物图](./doc/handDevice.png)
-其中伺幅开关请在完成上电若干秒后拨至on
-绿色部分为网线，需要直连至PC网口。
+- Leap Motion：USB Type-C 连接，侧灯绿色常亮
+- FFH 灵巧手：按接线图连接，网线直连到 PC 网口
 
-完成灵巧手的硬件连接后，需要启动灵巧手控制程序
-首先在终端中查询网线连接名称
-```console
+### 3) 启动灵巧手控制器
+
+先查网口名：
+
+```bash
 ifconfig
 ```
-![网络名称查询](./doc/2024-09-08_16-02.png)
-其中enp0s31f6即为网络名称
 
-进入程序文件路径，终端中输入以下指令可以启动灵巧手控制程序
-```console
+启动控制器（将 `enp0s31f6` 替换为你的网口名）：
+
+```bash
 sudo ./impedance_controller enp0s31f6
 ```
-其中**enp0s31f6**即为上述网络名称
 
-![网络名称查询](./doc/2024-09-08_16-07.png)
-执行完启动指令后，会出现以下命令行，同时灵巧手在控制指令启动后若干秒后发出一些刺拉的声音，则表示灵巧手已经正常启动。
-轻轻掰动灵巧手的某个关节，松开手后，灵巧手可以自动回到原位置，此时灵巧手已经进入阻抗模式。
+---
 
-## 3 参数配置
-**leap_motion_demo_config.yaml**用于描述演示项目中的参数配置
-![demo参数config文件](./doc/yaml.png)
-下表为各个参数的含义以及修改注意事项
+## 🎮 运行示例
 
-| 参数名称            | 默认参数值                                                                                | 参数含义                                                                    | 修改注意事项                                                                                          |
-| ------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| connection_internal | 1                                                                                         | 该参数用于描述连接传感器与PC尝试连接的延时，单位为s                         | 该参数可以不用修改                                                                                    |
-| control_internal    | 0.05                                                                                      | 该参数用于描述leapMotion与灵巧手的通信延时，单位为s                         | 该参数可以不用修改                                                                                    |
-| hand_Valid          | [1, 0]                                                                                    | 该参数用于描述灵巧手的数量                                                  | 该参数不用修改                                                                                        |
-| task_name           | "leap_motion_demo"                                                                        | 该参数用于描述执行的动作任务，该参数可以改成"self_check" 或者"test_by_hand" | 该参数参数可以根据需求更改                                                                            |
-| self_check_angle1   | [60, 60, -10]<br>  [60, 60, -10]<br>  [60, 60, -10]<br>  [60, 60, -10]<br>  [60, 60, -10] | 该参数可以用于描述自检任务中手指负向侧摆各关节执行的角度                    | 其中60可以改成0～90中范围内的值， -10改成-15～0范围内的值                                             |
-| self_check_angle2   | [60, 60, 10]<br>  [60, 60, 10]<br>  [60, 60, 10]<br>  [60, 60, 10]<br>  [60, 60, 10]      | 该参数可以用于描述自检任务中手指正向侧摆各关节执行的角度                    | 其中60可以改成0～90中范围内的值， 10改成0～15范围内的值                                               |
-| hand_info           | -                                                                                         | 该参数可以用于描述灵巧手连接及限幅参数                                      | 其中lower_limit和upper_limit可以修改，-10和10改动同上述self_check_angle的描述，其他所有参数都无需修改 |
+### 1) 角度实时同步（`leap_motion_demo`）
 
-## 4 任务执行
-### 4.1 角度同步
-确保已连接传感器上电，并启动上位机。
-进入bin文件夹后，打开终端，执行
-完成设置后，进入bin文件夹中打开终端，并执行
-```console
-sudo ./impedance_controller enp0s31f6
+在 `config/leap_motion_demo_config.yaml` 设置：
+
+```yaml
+task_name: "leap_motion_demo"
 ```
-完成控制器程序启动后，
-在leap_motion_demo_config.yaml中将参数**task_name**设置为**leap_motion_demo**。
-在当前目录下，打开一个新的终端， 执行可执行文件**test_lpv2_demo**
-```console
+
+运行：
+
+```bash
 ./test_lpv2_demo
 ```
-![demo参数config文件](./doc/2024-09-09_10-23.png)
-### 4.2 手指自检
-将上述test_lpv2_demo程序关闭（ctrl + v, 或者输入q + enter) 
-在leap_motion_demo_config.yaml中将参数**task_name**设置为**self_check**。
-该完后重复4.1中的操作启动**leap_motion_demo**
-![demo参数config文件](./doc/2024-09-09_14-24.png)
-运行程序后显示上述指令
-```console
-灵巧手即将进入自检模式，输入<test>, 进入自检，输入<quit>, 退出自检
+
+### 2) 手指自检（`self_check`）
+
+配置：
+
+```yaml
+task_name: "self_check"
 ```
-根据指令输入**test**, 之后会看到灵巧手每个手指的关节依次运动的自检程序
-如果想退出自检程序，则在灵巧手完成自检程序后，输入**quit** 或者ctrl + c 则会退出程序。
-### 4.3 根据输入参数执行角度
-类似上述4.2的操作，将在leap_motion_demo_config.yaml中将参数**task_name**设置为**test_by_hand**。
-然后命令行启动**test_lpv2_demo**
-![demo参数config文件](./doc/2024-09-09_14-39.png)
-命令行输入**test**, 可执行单一关节测试。
-![demo参数config文件](./doc/2024-09-09_14-40.png)
-如图所示可以输入手指id、关节id和期望角度
-0：拇指
-1：食指
-2：中指
-3：无名指
-4：小拇指
-![demo参数config文件](./doc/2024-09-09_14-41.png)
-如图所示一次输入0、1、30，即可控制灵巧手大拇指第2关节运动至30度
-同理输入reset可以将手指复位， 输入quit则可退出测试
-![demo参数config文件](./doc/2024-09-09_14-43_1.png)
-## 5 故障排除
-常见的故障有手指无反应或者运动位置异常，此时可以重新上电，并重新启动impedance_controller程序。
+
+运行后按提示输入 `test` 开始，输入 `quit` 退出。
+
+### 3) 手动参数测试（`test_by_hand`）
+
+配置：
+
+```yaml
+task_name: "test_by_hand"
+```
+
+运行后输入 `test`，按提示输入手指 ID、关节 ID、目标角度。
+
+---
+
+## ⚙️ 参数说明
+
+主配置文件：`config/leap_motion_demo_config.yaml`
+
+常用参数：
+
+- `connection_internal`：连接建立延时（s）
+- `control_internal`：控制周期（s）
+- `hand_Valid`：使能的灵巧手列表
+- `task_name`：任务模式（`leap_motion_demo` / `self_check` / `test_by_hand`）
+- `self_check_angle1` / `self_check_angle2`：自检角度模板
+- `hand_info`：手部连接与关节限幅配置
+
+---
+
+## 🛠️ 故障排除
+
+常见问题：手指无响应、运动异常。
+
+建议处理顺序：
+
+1. 断电重启灵巧手
+2. 重新启动 `impedance_controller`
+3. 确认 Leap 控制面板能识别手部
+4. 检查配置文件中的网口与限幅参数
+
+---
+
+## 📎 参考资料
+
+- 设备连线与界面截图：`doc/`
+- 示例配置：`config/leap_motion_demo_config.yaml`
+
