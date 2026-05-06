@@ -47,6 +47,14 @@ Leap Motion 设备
 
 ---
 
+## 📷 硬件示意
+
+| Leap Motion 设备 | 灵巧手连接示意 |
+| --- | --- |
+| ![leap motion device](./doc/lp_device.png) | ![ffh hand device](./doc/handDevice.png) |
+
+---
+
 ## 🧰 环境依赖
 
 - Linux（Ubuntu）
@@ -162,4 +170,3 @@ task_name: "test_by_hand"
 
 - 设备连线与界面截图：`doc/`
 - 示例配置：`config/leap_motion_demo_config.yaml`
-
